@@ -1,0 +1,6 @@
+{
+  "name": "Smart Farmer Assistant",
+  "description": "Friendly digital farming companion for market net return calculations, crop tracking, voice interaction, and monthly earnings in local languages.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
