@@ -1,6 +1,6 @@
 {
-  "name": "Smart Farmer Assistant",
-  "description": "Friendly digital farming companion for market net return calculations, crop tracking, voice interaction, and monthly earnings in local languages.",
-  "requestFramePermissions": ["microphone"],
+  "name": "VayalWay",
+  "description": "Smart agricultural market price & net return comparator for farmers. Compare prices across APMC mandis, wholesalers, and buyers based on actual take-home profit.",
+  "requestFramePermissions": ["microphone", "geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

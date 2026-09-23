@@ -1,307 +1,161 @@
-import React, { useState } from 'react';
-import { Check, ArrowRight, Sprout, MapPin, User, Globe, Ruler } from 'lucide-react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Language } from '../types';
+import {
+  Scale,
+  Sparkles,
+  ArrowRight,
+  Mic,
+  Languages,
+  CheckCircle2,
+  Check
+} from 'lucide-react';
 
 export const OnboardingModal: React.FC = () => {
-  const { profile, updateProfile, language, setLanguage, t, crops } = useApp();
-  const [step, setStep] = useState(1);
-  const [name, setName] = useState(profile.name || '');
-  const [location, setLocation] = useState(profile.location || 'Kolar, Karnataka');
-  const [selectedCrops, setSelectedCrops] = useState<string[]>(profile.cropsGrown || ['tomato', 'onion']);
-  const [farmSize, setFarmSize] = useState(profile.farmSize || '3 Acres');
+  const {
+    showOnboarding,
+    finishOnboarding,
+    t,
+    language,
+    setLanguage,
+    languagesList,
+    setActiveTab
+  } = useApp();
 
-  if (profile.isOnboarded) return null;
-
-  const languagesList: { code: Language; label: string; native: string; flag: string }[] = [
-    { code: 'en', label: 'English', native: 'English', flag: '🇬🇧' },
-    { code: 'hi', label: 'Hindi', native: 'हिंदी', flag: '🇮🇳' },
-    { code: 'ta', label: 'Tamil', native: 'தமிழ்', flag: '🇮🇳' },
-    { code: 'te', label: 'Telugu', native: 'తెలుగు', flag: '🇮🇳' },
-    { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ', flag: '🇮🇳' },
-    { code: 'ml', label: 'Malayalam', native: 'മലയാളം', flag: '🇮🇳' },
-  ];
-
-  const popularLocations = [
-    'Kolar, Karnataka',
-    'Nashik, Maharashtra',
-    'Erode, Tamil Nadu',
-    'Guntur, Andhra Pradesh',
-    'Shimla, Himachal Pradesh',
-    'Wayanad, Kerala'
-  ];
-
-  const toggleCrop = (id: string) => {
-    if (selectedCrops.includes(id)) {
-      setSelectedCrops(selectedCrops.filter(c => c !== id));
-    } else {
-      setSelectedCrops([...selectedCrops, id]);
-    }
-  };
-
-  const handleFinish = () => {
-    updateProfile({
-      name: name.trim() || 'Kisan Bhai',
-      location: location.trim() || 'Kolar, Karnataka',
-      farmSize: farmSize.trim() || '3 Acres',
-      cropsGrown: selectedCrops.length > 0 ? selectedCrops : ['tomato', 'onion'],
-      isOnboarded: true
-    });
-  };
+  if (!showOnboarding) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100 flex flex-col">
-        {/* Progress header */}
-        <div className="bg-emerald-900 p-5 text-white">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-              Step {step} of 5
-            </span>
-            <span className="text-xs text-emerald-200">
-              {t.onboardingTitle}
-            </span>
+    <div className="fixed inset-0 z-50 bg-[#2E2118]/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#FFFDF9] rounded-[24px] max-w-lg w-full shadow-warm-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-[#C1622D]/20">
+        {/* Banner with Farmland Hills / Sun Golden-Hour SVG and Terracotta Gradient */}
+        <div className="bg-gradient-to-br from-[#2D4F26] via-[#4A7C3F] to-[#C1622D] text-white p-6 sm:p-7 relative overflow-hidden text-center">
+          {/* SVG Farmland Rice Paddy & Golden Hour Sun Motif */}
+          <div className="absolute inset-0 opacity-20 pointer-events-none">
+            <svg viewBox="0 0 500 250" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full object-cover">
+              {/* Golden Sun */}
+              <circle cx="250" cy="60" r="45" fill="#E8A93D" opacity="0.6"/>
+              <path d="M250 5 V15 M250 105 V115 M195 60 H205 M295 60 H305" stroke="#E8A93D" strokeWidth="3" strokeLinecap="round"/>
+              {/* Rolling Farmland / Terraced Paddy Hills */}
+              <path d="M0 160 Q120 120 250 160 T500 150 L500 250 L0 250 Z" fill="#243F1E" opacity="0.8"/>
+              <path d="M0 190 Q150 160 300 200 T500 180 L500 250 L0 250 Z" fill="#1B3217" opacity="0.9"/>
+              <path d="M0 220 Q200 190 350 220 T500 210 L500 250 L0 250 Z" fill="#142611"/>
+              {/* Rice crop stalks / Grain motifs */}
+              <path d="M50 210 Q60 180 70 170 M70 170 Q75 160 85 165 M65 175 Q60 165 50 170" stroke="#E8A93D" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M430 210 Q440 180 450 170 M450 170 Q455 160 465 165 M445 175 Q440 165 430 170" stroke="#E8A93D" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
           </div>
-          <div className="w-full bg-emerald-950 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full transition-all duration-300 rounded-full"
-              style={{ width: `${(step / 5) * 100}%` }}
-            ></div>
+
+          {/* Terracotta-to-transparent subtle gradient overlay for maximum readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#2E2118]/80 via-[#C1622D]/40 to-transparent pointer-events-none" />
+
+          <div className="relative z-10">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-[#E8A93D] to-[#C1622D] p-1 shadow-warm-md mb-3 flex items-center justify-center">
+              <div className="w-full h-full bg-[#FFFDF9] rounded-[20px] flex items-center justify-center text-3xl">
+                🌾
+              </div>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1">
+              {t.appName}
+            </h2>
+
+            <p className="text-[#E8A93D] font-extrabold text-xs uppercase tracking-wider mb-2">
+              Smart Mandi Price & Net Return Comparator
+            </p>
+
+            <p className="text-[#EDF5EB] text-xs sm:text-sm max-w-md mx-auto leading-relaxed font-medium">
+              {t.onboardingDesc}
+            </p>
           </div>
         </div>
 
-        {/* Step Content */}
-        <div className="p-6 flex-1">
-          {/* Step 1: Language */}
-          {step === 1 && (
-            <div className="animate-in fade-in">
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
-                  🌐
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{t.selectLanguage}</h3>
-                <p className="text-xs text-gray-500">Choose the language you are most comfortable with</p>
-              </div>
+        {/* Content */}
+        <div className="p-6 space-y-5">
+          {/* Language Selection: Dropdown & Visual Buttons */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-black text-[#2E2118] flex items-center gap-1.5">
+                <Languages className="w-4 h-4 text-[#C1622D]" />
+                <span>{t.selectLanguage}</span>
+              </span>
+              <span className="text-[11px] text-[#4A7C3F] font-bold">
+                7 Indian Languages
+              </span>
+            </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                {languagesList.map((l) => (
+            {/* Language Dropdown (as requested in prompt) */}
+            <div className="mb-3">
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-2xl border border-[#C1622D]/30 bg-[#FBF3E7] text-sm font-bold text-[#2E2118] focus:outline-none focus:ring-2 focus:ring-[#C1622D]"
+              >
+                {languagesList.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.nativeName} ({item.label})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quick Language Visual Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {languagesList.map((item) => {
+                const isSelected = item.code === language;
+                return (
                   <button
-                    key={l.code}
-                    onClick={() => setLanguage(l.code)}
-                    className={`p-3 rounded-2xl border-2 text-left transition flex items-center justify-between ${
-                      language === l.code
-                        ? 'border-emerald-600 bg-emerald-50/80 font-bold text-emerald-900 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                    key={item.code}
+                    onClick={() => setLanguage(item.code as Language)}
+                    className={`min-h-[44px] p-2.5 rounded-2xl border text-left flex items-center justify-between transition-all active:scale-95 ${
+                      isSelected
+                        ? 'bg-[#FFF8EE] border-[#C1622D] text-[#C1622D] font-black shadow-warm-xs ring-2 ring-[#C1622D]/20'
+                        : 'bg-[#FFFDF9] hover:bg-[#FBF3E7] border-amber-200/60 text-[#2E2118] font-bold'
                     }`}
                   >
-                    <div>
-                      <div className="text-xl mb-0.5">{l.flag}</div>
-                      <div className="text-sm font-bold">{l.native}</div>
-                      <div className="text-[11px] text-gray-400">{l.label}</div>
+                    <div className="truncate">
+                      <div className="text-xs truncate font-extrabold">{item.nativeName}</div>
+                      <div className="text-[10px] text-stone-500 font-medium">{item.label}</div>
                     </div>
-                    {language === l.code && <Check className="w-5 h-5 text-emerald-600" />}
+                    {isSelected && <Check className="w-4 h-4 text-[#C1622D] shrink-0 stroke-[3]" />}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
+          </div>
 
-          {/* Step 2: Name */}
-          {step === 2 && (
-            <div className="animate-in fade-in">
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
-                  👨‍🌾
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{t.yourName}</h3>
-                <p className="text-xs text-gray-500">We will use this to personalize your assistant</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="relative">
-                  <User className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Ramesh Kumar, Sivakumar, Raju"
-                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-emerald-200 rounded-2xl focus:border-emerald-600 focus:outline-none bg-emerald-50/30 text-slate-800 font-semibold"
-                    autoFocus
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-2">
-                  <span className="text-xs text-gray-400">Quick options:</span>
-                  {['Ramesh Kumar', 'Sivakumar', 'Anil Patel', 'Venkatesh'].map((sample) => (
-                    <button
-                      key={sample}
-                      onClick={() => setName(sample)}
-                      className="text-xs bg-gray-100 hover:bg-emerald-100 text-gray-700 px-2.5 py-1 rounded-lg transition"
-                    >
-                      {sample}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* 3 Core Benefits */}
+          <div className="space-y-2 bg-[#EDF5EB]/70 p-3.5 rounded-2xl border border-[#4A7C3F]/25 text-xs text-[#2E2118]">
+            <div className="flex items-start gap-2.5">
+              <span className="text-[#4A7C3F] font-black text-sm">✓</span>
+              <span className="font-medium">
+                <strong className="text-[#2D4F26]">Net Take-Home Cash:</strong> Accounts for truck freight, diesel, and APMC fees.
+              </span>
             </div>
-          )}
-
-          {/* Step 3: Location */}
-          {step === 3 && (
-            <div className="animate-in fade-in">
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
-                  📍
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{t.yourLocation}</h3>
-                <p className="text-xs text-gray-500">Helps calculate transport costs to nearby mandis</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Kolar, Karnataka"
-                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-emerald-200 rounded-2xl focus:border-emerald-600 focus:outline-none bg-emerald-50/30 text-slate-800 font-semibold"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <p className="text-xs font-bold text-gray-500 mb-2">Select your district:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {popularLocations.map((loc) => (
-                      <button
-                        key={loc}
-                        onClick={() => setLocation(loc)}
-                        className={`text-xs p-2.5 rounded-xl border text-left font-medium transition ${
-                          location === loc
-                            ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-bold'
-                            : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {loc}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-start gap-2.5">
+              <span className="text-[#4A7C3F] font-black text-sm">✓</span>
+              <span className="font-medium">
+                <strong className="text-[#2D4F26]">Voice-Enabled:</strong> Speak crop & quantity naturally in your mother tongue.
+              </span>
             </div>
-          )}
-
-          {/* Step 4: Crops Grown */}
-          {step === 4 && (
-            <div className="animate-in fade-in">
-              <div className="text-center mb-4">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
-                  🌾
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{t.cropsGrown}</h3>
-                <p className="text-xs text-gray-500">Select one or more crops that you cultivate</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
-                {crops.map((crop) => {
-                  const isSelected = selectedCrops.includes(crop.id);
-                  return (
-                    <button
-                      key={crop.id}
-                      onClick={() => toggleCrop(crop.id)}
-                      className={`p-3 rounded-2xl border-2 flex items-center gap-2.5 transition text-left ${
-                        isSelected
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold shadow-xs'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="text-2xl">{crop.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold truncate">
-                          {t[crop.nameKey as keyof typeof t] || crop.id}
-                        </div>
-                        <div className="text-[10px] text-gray-400">₹{crop.currentAvgPrice}/kg</div>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex items-start gap-2.5">
+              <span className="text-[#4A7C3F] font-black text-sm">✓</span>
+              <span className="font-medium">
+                <strong className="text-[#2D4F26]">Zero Complex Math:</strong> Automatically highlights the true highest-profit buyer.
+              </span>
             </div>
-          )}
+          </div>
 
-          {/* Step 5: Farm Size */}
-          {step === 5 && (
-            <div className="animate-in fade-in">
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2 text-2xl">
-                  🚜
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{t.farmSize}</h3>
-                <p className="text-xs text-gray-500">Helps estimate harvest output (optional)</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="relative">
-                  <Ruler className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={farmSize}
-                    onChange={(e) => setFarmSize(e.target.value)}
-                    placeholder="e.g. 3.5 Acres or 5 Bigha"
-                    className="w-full pl-12 pr-4 py-3.5 text-base border-2 border-emerald-200 rounded-2xl focus:border-emerald-600 focus:outline-none bg-emerald-50/30 text-slate-800 font-semibold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 pt-2">
-                  {['1 Acre', '2.5 Acres', '3.5 Acres', '5 Acres', '10 Acres', '2 Bigha'].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setFarmSize(size)}
-                      className={`text-xs py-2 px-3 rounded-xl border text-center transition font-semibold ${
-                        farmSize === size
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Navigation */}
-        <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep(step - 1)}
-              className="text-xs font-bold text-gray-600 hover:text-gray-900 px-3 py-2 rounded-xl transition"
-            >
-              Back
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step < 5 ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-md flex items-center gap-2 transition active:scale-95 ml-auto"
-            >
-              <span>{t.nextStep}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={handleFinish}
-              className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-md flex items-center gap-2 transition active:scale-95 ml-auto"
-            >
-              <span>{t.getStarted} 🌾</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
+          {/* Action button (min-h-[48px]) */}
+          <button
+            onClick={() => {
+              finishOnboarding();
+              setActiveTab('compare');
+            }}
+            className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-[#E8A93D] hover:bg-[#D9992E] text-[#2E2118] font-black text-base flex items-center justify-center gap-2 shadow-warm-md active:scale-95 transition"
+          >
+            <span>{t.getStarted}</span>
+            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+          </button>
         </div>
       </div>
     </div>

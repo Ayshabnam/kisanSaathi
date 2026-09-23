@@ -1,278 +1,125 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, X, Sparkles, ArrowRight, CornerDownLeft } from 'lucide-react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Language } from '../types';
+import { Mic, X, Volume2, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const VoiceAssistantModal: React.FC = () => {
-  const { isVoiceModalOpen, setIsVoiceModalOpen, t, language, executeVoiceIntent, speakText } = useApp();
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [lastResponse, setLastResponse] = useState<{ action: string; reply: string } | null>(null);
-  const [micSupported, setMicSupported] = useState(true);
-  const recognitionRef = useRef<any>(null);
+  const {
+    showVoiceModal,
+    setShowVoiceModal,
+    isListening,
+    voiceTranscript,
+    voiceFeedbackMessage,
+    startVoiceInput,
+    stopVoiceInput,
+    t,
+    voiceField,
+    setSelectedCropId,
+    setQuantityKg,
+    setLocation,
+    setActiveTab
+  } = useApp();
 
-  // Sample prompt chips tailored to current language
-  const samplePromptsByLang: Record<Language, string[]> = {
-    en: [
-      "I have 500 kilograms of tomatoes",
-      "What is today's tomato price?",
-      "Where can I sell my tomatoes?",
-      "Which market gives me more return?",
-      "How much did I earn this month?",
-      "What crops are in season?"
-    ],
-    hi: [
-      "मेरे पास 500 किलो टमाटर हैं",
-      "आज टमाटर का क्या भाव है?",
-      "टमाटर कहाँ बेचने पर ज़्यादा बचत होगी?",
-      "इस महीने मेरी कितनी कमाई हुई?",
-      "अभी कौन सी फसल का मौसम है?"
-    ],
-    ta: [
-      "என்னிடம் 500 கிலோ தக்காளி உள்ளது",
-      "இன்றைய தக்காளி விலை என்ன?",
-      "எந்த சந்தையில் அதிக லாபம் கிடைக்கும்?",
-      "இந்த மாதம் என் வருமானம் எவ்வளவு?",
-      "தற்போது எந்த பயிர் பருவம்?"
-    ],
-    te: [
-      "నా దగ్గర 500 కేజీల టమోటాలు ఉన్నాయి",
-      "ఈరోజు టమోటా ధర ఎంత?",
-      "ఏ మార్కెట్లో ఎక్కువ లాభం వస్తుంది?",
-      "ఈ నెల నా ఆదాయం ఎంత?",
-      "ఇప్పుడు ఏ పంటల సీజన్?"
-    ],
-    kn: [
-      "ನನ್ನ ಬಳಿ 500 ಕೆಜಿ ಟೊಮೆಟೊ ಇದೆ",
-      "ಇಂದು ಟೊಮೆಟೊ ಬೆಲೆ ಎಷ್ಟು?",
-      "ಯಾವ ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ಹೆಚ್ಚು ಲಾಭವಿದೆ?",
-      "ಈ ತಿಂಗಳು ನನ್ನ ಗಳಿಕೆ ಎಷ್ಟು?",
-      "ಈಗ ಯಾವ ಬೆಳೆಯ ಕಾಲ?"
-    ],
-    ml: [
-      "എന്റെ പക്കൽ 500 കിലോഗ്രാം തക്കാളി ഉണ്ട്",
-      "ഇന്നത്തെ തക്കാളി വില എത്രയാണ്?",
-      "ഏത് ചന്തയിലാണ് കൂടുതൽ ലാഭം കിട്ടുക?",
-      "ഈ മാസം എന്റെ വരുമാനം എത്രയായി?",
-      "ഇപ്പോൾ ഏത് വിളയുടെ സീസൺ ആണ്?"
-    ]
-  };
+  if (!showVoiceModal) return null;
 
-  const samplePrompts = samplePromptsByLang[language] || samplePromptsByLang.en;
-
-  // Initialize Web Speech API
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        
-        const langMap: Record<Language, string> = {
-          en: 'en-IN',
-          hi: 'hi-IN',
-          ta: 'ta-IN',
-          te: 'te-IN',
-          kn: 'kn-IN',
-          ml: 'ml-IN'
-        };
-        recognition.lang = langMap[language] || 'en-IN';
-
-        recognition.onstart = () => {
-          setIsListening(true);
-        };
-
-        recognition.onresult = (event: any) => {
-          const current = event.resultIndex;
-          const text = event.results[current][0].transcript;
-          setTranscript(text);
-        };
-
-        recognition.onerror = (event: any) => {
-          console.warn('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
-        recognitionRef.current = recognition;
-      } else {
-        setMicSupported(false);
-      }
-    }
-  }, [language]);
-
-  // Auto-start listening when modal opens
-  useEffect(() => {
-    if (isVoiceModalOpen) {
-      setTranscript('');
-      setLastResponse(null);
-      startListening();
-    } else {
-      stopListening();
-    }
-  }, [isVoiceModalOpen]);
-
-  const startListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start();
-      } catch (err) {
-        // already started
-      }
-    }
-    setIsListening(true);
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (err) {
-        // ignore
-      }
-    }
-    setIsListening(false);
-  };
-
-  const handleProcessSpeech = (textToProcess: string) => {
-    if (!textToProcess.trim()) return;
-    stopListening();
-    setTranscript(textToProcess);
-    const result = executeVoiceIntent(textToProcess);
-    setLastResponse({
-      action: result.actionDescription,
-      reply: result.spokenReply
-    });
-
-    // Automatically close modal after 3 seconds so user can see the resulting screen, or user can close manually
-    setTimeout(() => {
-      setIsVoiceModalOpen(false);
-    }, 2800);
-  };
-
-  if (!isVoiceModalOpen) return null;
+  const sampleVoiceChips = [
+    { label: '500 kg Tomato', cropId: 'tomato', qty: 500 },
+    { label: '1000 kg Onion', cropId: 'onion', qty: 1000 },
+    { label: '15 Quintal Wheat', cropId: 'wheat', qty: 1500 },
+    { label: '800 kg Potato', cropId: 'potato', qty: 800 },
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-50 bg-[#2E2118]/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#FFFDF9] rounded-[24px] max-w-md w-full shadow-warm-lg overflow-hidden border border-[#C1622D]/20 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-800 to-teal-800 p-4 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center font-bold">
-              <Mic className="w-4 h-4" />
+        <div className="bg-gradient-to-r from-[#2D4F26] via-[#3A6331] to-[#C1622D] text-white p-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-[#E8A93D] text-[#2E2118] flex items-center justify-center font-black shadow-xs">
+              <Mic className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-base leading-tight">{t.voiceHelperTitle}</h3>
-              <p className="text-[11px] text-emerald-200">{t.voiceHelperSubtitle}</p>
+              <h3 className="font-black text-sm text-white">Voice Assistant</h3>
+              <p className="text-[11px] text-[#EDF5EB] font-medium">
+                {voiceField ? `Listening for ${voiceField}...` : 'Speak crop, quantity, or location'}
+              </p>
             </div>
           </div>
+
           <button
-            onClick={() => setIsVoiceModalOpen(false)}
-            className="p-1.5 rounded-full hover:bg-white/20 transition text-emerald-100"
+            onClick={stopVoiceInput}
+            className="w-10 h-10 rounded-full hover:bg-white/10 text-white flex items-center justify-center transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Central Listening / Speaking Wave */}
-        <div className="p-6 text-center bg-gradient-to-b from-emerald-50/50 to-white flex flex-col items-center">
-          <div className="relative mb-4">
+        {/* Listening Animation & Visualizer */}
+        <div className="p-6 text-center space-y-5">
+          <div className="relative inline-flex items-center justify-center">
+            {/* Pulsing glow rings */}
             {isListening && (
               <>
-                <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-30"></div>
-                <div className="absolute -inset-3 rounded-full bg-amber-300 animate-pulse opacity-40"></div>
+                <div className="absolute w-28 h-28 rounded-full bg-[#E8A93D]/30 animate-ping" />
+                <div className="absolute w-20 h-20 rounded-full bg-[#C1622D]/30 animate-pulse" />
               </>
             )}
+
             <button
-              id="voice-mic-main-button"
-              onClick={() => {
-                if (isListening) {
-                  stopListening();
-                  if (transcript) handleProcessSpeech(transcript);
-                } else {
-                  startListening();
-                }
-              }}
-              className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition transform active:scale-95 ${
-                isListening
-                  ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white ring-4 ring-amber-300'
-                  : 'bg-emerald-800 text-white hover:bg-emerald-700'
+              onClick={() => (isListening ? stopVoiceInput() : startVoiceInput())}
+              className={`relative z-10 w-20 h-20 rounded-full flex items-center justify-center text-white shadow-warm-md transition-transform active:scale-95 ${
+                isListening ? 'bg-rose-600 ring-4 ring-rose-200' : 'bg-[#C1622D] hover:bg-[#B05524]'
               }`}
             >
-              <Mic className="w-9 h-9" />
+              <Mic className={`w-8 h-8 ${isListening ? 'animate-bounce' : ''}`} />
             </button>
           </div>
 
-          <p className="text-sm font-semibold text-emerald-900 mb-1">
-            {isListening ? t.listening : t.tapToSpeak}
-          </p>
-          <p className="text-xs text-gray-500 max-w-xs">
-            {t.appName} understands your crop & returns the best market options instantly.
-          </p>
-
-          {/* Transcript / Spoken Result Box */}
-          <div className="mt-4 w-full bg-white border border-emerald-100 rounded-2xl p-3.5 shadow-sm text-left min-h-[70px] flex flex-col justify-center">
-            {transcript ? (
-              <div>
-                <p className="text-[11px] uppercase tracking-wider font-bold text-emerald-700 mb-0.5">
-                  You said:
-                </p>
-                <p className="text-sm font-bold text-slate-800">
-                  "{transcript}"
-                </p>
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400 italic text-center">
-                "{samplePrompts[0]}"
-              </p>
-            )}
-
-            {lastResponse && (
-              <div className="mt-2.5 pt-2 border-t border-emerald-50 flex items-start gap-2 bg-emerald-50/60 p-2 rounded-xl">
-                <Volume2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-emerald-900">{lastResponse.action}</p>
-                  <p className="text-xs text-emerald-800 mt-0.5">{lastResponse.reply}</p>
-                </div>
-              </div>
-            )}
+          <div>
+            <h4 className="font-black text-[#2E2118] text-base">
+              {isListening ? t.listening : 'Tap microphone to speak'}
+            </h4>
+            <p className="text-xs text-stone-600 mt-1 max-w-xs mx-auto font-medium">
+              {voiceFeedbackMessage || t.speakPrompt}
+            </p>
           </div>
 
-          {transcript && !lastResponse && (
-            <button
-              onClick={() => handleProcessSpeech(transcript)}
-              className="mt-3 w-full py-2.5 px-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow transition"
-            >
-              <span>Process: "{transcript}"</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+          {/* Transcript preview box */}
+          {voiceTranscript && (
+            <div className="bg-[#FFF8EE] border border-[#E8A93D] rounded-2xl p-3.5 text-xs text-[#2E2118] font-black flex items-center justify-center gap-2 shadow-warm-xs">
+              <Sparkles className="w-4 h-4 text-[#C1622D] shrink-0" />
+              <span>"{voiceTranscript}"</span>
+            </div>
           )}
-        </div>
 
-        {/* Quick Tap Suggested Commands (Accessibility: 1-Tap Execution) */}
-        <div className="p-4 bg-gray-50 border-t border-gray-100">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            {t.tryAsking}
-          </p>
-          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-            {samplePrompts.map((prompt, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleProcessSpeech(prompt)}
-                className="text-left text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-900 py-2 px-3 rounded-xl border border-gray-200 hover:border-emerald-300 font-medium transition flex items-center justify-between group active:scale-[0.99]"
-              >
-                <span className="truncate pr-2">"{prompt}"</span>
-                <span className="text-emerald-600 font-bold opacity-0 group-hover:opacity-100 transition text-[11px] shrink-0">
-                  Tap to ask →
-                </span>
-              </button>
-            ))}
+          {/* Quick Voice Chips (Low literacy convenience) */}
+          <div className="pt-2 border-t border-amber-100">
+            <span className="text-[11px] font-bold text-stone-500 block mb-2.5">
+              Or tap a quick harvest preset:
+            </span>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {sampleVoiceChips.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setSelectedCropId(chip.cropId);
+                    setQuantityKg(chip.qty);
+                    stopVoiceInput();
+                    setActiveTab('compare');
+                  }}
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#FBF3E7] hover:bg-[#F4E8D6] hover:text-[#C1622D] border border-amber-200/80 text-[#2E2118] transition active:scale-95"
+                >
+                  🌾 {chip.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <button
+            onClick={stopVoiceInput}
+            className="w-full min-h-[44px] py-2.5 rounded-2xl bg-[#E8A93D] hover:bg-[#D9992E] text-[#2E2118] text-xs font-black shadow-warm-sm transition"
+          >
+            Done
+          </button>
         </div>
       </div>
     </div>
